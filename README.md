@@ -4,7 +4,7 @@
 springboot启动jbpm流程，并提供api接口
 
 #### 软件架构
-软件架构说明:
+软件架构说明:  
    开发工具:eclipse+maven  
    框架技术:springboot/jbpm7(kieserver)/mysql/jpa/spring security
 
@@ -18,7 +18,10 @@ springboot启动jbpm流程，并提供api接口
 4.  配置bpmn文件(已提供hello.bpmn和Test.bpmn两个文件 两个workflow/process)
     也可使用自己的bpmn文件
 5.  启动Application
-6.  访问swagger查看api  http://localhost:8080/jbpm/swagger-ui.html
+6.  访问swagger查看api  http://localhost:8080/jbpm/swagger-ui.html  
+    访问账号密码:  
+    账号:Nero/JOJO/Test/Administrator  (也可在kpi_user表配置)
+    密码都是123456 
 
 #### 使用说明
 
