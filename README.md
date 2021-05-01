@@ -4,20 +4,34 @@
 springboot启动jbpm流程，并提供api接口
 
 #### 软件架构
-软件架构说明
+软件架构说明:
+   开发工具:eclipse+maven
+   框架技术:springboot/jbpm7(kieserver)/mysql/jpa/spring security
+
 
 
 #### 安装教程
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+1.  git下载project
+2.  eclpise导入maven project
+3.  配置mysql,并执行tomcat_user.sql创建用户权限表(供spring security使用)
+4.  配置bpmn文件(已提供hello.bpmn和Test.bpmn两个文件 两个workflow/process)
+    也可使用自己的bpmn文件
+5.  启动Application
+6.  访问swagger查看api  http://localhost:8080/jbpm/swagger-ui.html
 
 #### 使用说明
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+1.  api startProcess/startProcessNew
+    startProcess:   只会返回processInstanceId
+    startProcessNew:还会返回第一个Task的信息
+2.  Task api:(Task生命周期)
+    claimTask
+    assignTask
+    startTask
+    completeTask
+3.  search api:(查看Process/Task的信息)
+    自行研究
 
 #### 参与贡献
 
