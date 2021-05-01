@@ -35,6 +35,7 @@ springboot启动jbpm流程，并提供api接口
     completeTask
 3.  search api:(查看Process/Task的信息)  
     自行研究
+4.  可使用HttpClientUtil.java测试
 
 #### 参与贡献
 
