@@ -43,8 +43,8 @@ public class KpiController {
 	@Autowired
 	private UserRepository userRepository;
 	
-	private static final String CODE_SUCCESS="SUCCESS";
-	private static final String CODE_FAILED="FAILED";
+	public static final String CODE_SUCCESS="SUCCESS";
+	public static final String CODE_FAILED="FAILED";
 	
 	
 	public Long startProcess(String userId) {
