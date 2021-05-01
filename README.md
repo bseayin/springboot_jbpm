@@ -5,7 +5,7 @@ springboot启动jbpm流程，并提供api接口
 
 #### 软件架构
 软件架构说明:  
-   开发工具:eclipse+maven  
+   开发工具:eclipse+maven+jdk1.8  
    框架技术:springboot/jbpm7(kieserver)/mysql/jpa/spring security
 
 
