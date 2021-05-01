@@ -3,6 +3,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.xml.bind.DatatypeConverter;
@@ -18,6 +19,12 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
+import org.jsoup.helper.StringUtil;
+import org.kie.api.task.model.Status;
+
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
+import com.controller.KpiController;
 
 /**
  * Created by xenia on 2017/6/6.
@@ -25,12 +32,17 @@ import org.apache.http.util.EntityUtils;
 public class HttpClientUtil {
 	
 	private static String rootPath="http://localhost:8080/jbpm/kpi/";
-	private static String authorization="JOJO:123456";
+	
+	private static String userId="JOJO";
+	private static String password="123456";
+	
+	private static String authorization=userId+":"+password;
 	
 	
-    public static void doGet(String method,Map<String,Object> params) throws ClientProtocolException, IOException {
+    public static JSONObject doGet(String method,Map<String,Object> params) throws ClientProtocolException, IOException {
         //认证信息对象，用于包含访问翻译服务的用户名和密码
-
+    	String result = null;
+    	
         String path = rootPath+method+"?";
         if(params!=null) {
         	int i=0;
@@ -64,7 +76,7 @@ public class HttpClientUtil {
                 InputStream input = entity.getContent();
                 BufferedReader br = new BufferedReader(new InputStreamReader(input));
                 String str1 = br.readLine();
-                String result = new String(str1.getBytes("gbk"), "utf-8");
+                result = new String(str1.getBytes("gbk"), "utf-8");
                 System.out.println("服务器的响应是:" + result);
                 br.close();
                 input.close();
@@ -72,13 +84,18 @@ public class HttpClientUtil {
                 System.out.println("响应失败!");
             }
         
+            if(result==null) {
+            	return null;
+            }else {
+            	return JSONObject.parseObject(result);
+            }
     }
 
-	public static void doPost(String method,Map<String,Object> params,String requestBody) throws ClientProtocolException, IOException {
-
+	public static JSONObject doPost(String method,Map<String,Object> params,String requestBody) throws ClientProtocolException, IOException {
+		String result = null;
         //认证信息对象，用于包含访问翻译服务的用户名和密码
 
-        String path = rootPath+method;
+        String path = rootPath+method+"?";
         
         if(params!=null) {
 	        int i=0;
@@ -122,7 +139,7 @@ public class HttpClientUtil {
                 InputStream input = entity.getContent();
                 BufferedReader br = new BufferedReader(new InputStreamReader(input));
                 String str1 = br.readLine();
-                String result = new String(str1.getBytes("gbk"), "utf-8");
+                result = new String(str1.getBytes("gbk"), "utf-8");
                 System.out.println("服务器的响应是:" + result);
                 br.close();
                 input.close();
@@ -130,15 +147,114 @@ public class HttpClientUtil {
                 System.out.println("响应失败!");
             }
         
-    
+            if(result==null) {
+            	return null;
+            }else {
+            	return JSONObject.parseObject(result);
+            }
 	}
 	
 	public static void main(String[] args) {
-		
+		String taskId;
 		
 		
 		try {
-			HttpClientUtil.doPost("startProcess", null,null);
+			
+			//0.startProcessNew
+			JSONObject res=HttpClientUtil.doPost("startProcessNew", null,null);
+			
+			String code=res.getString("code");
+			if(KpiController.CODE_FAILED.equals(code)) {
+				return;
+			}
+			JSONObject result=(JSONObject) res.get("result");
+			
+			JSONObject firsttask=(JSONObject) (result.getJSONArray("taskList").get(0));
+			
+			taskId=firsttask.getString("id");
+			
+			String processInstanceId=result.getString("processInstanceId");
+			
+			while(!StringUtil.isBlank(taskId)) {
+				
+				Map<String,Object> params=new HashMap<String,Object>(16);
+				
+				
+				//1.claim
+				params.put("taskId", taskId);
+				params.put("userId", userId);
+				res=HttpClientUtil.doGet("claimTask", params);	
+				
+				code=res.getString("code");
+				if(KpiController.CODE_FAILED.equals(code)) {
+					return;
+				}
+				
+				
+				
+				//2.start
+				
+				params.put("taskId", taskId);
+				params.put("userId", userId);
+				res=HttpClientUtil.doGet("startTask", params);	
+				
+				code=res.getString("code");
+				if(KpiController.CODE_FAILED.equals(code)) {
+					return;
+				}
+				
+				//3.complete
+				params.put("taskId", taskId);
+				params.put("userId", userId);
+				res=HttpClientUtil.doPost("completeTask", params,null);	
+				
+				code=res.getString("code");
+				if(KpiController.CODE_FAILED.equals(code)) {
+					return;
+				}
+				
+				//4.call search api to find newTaskId
+				params.put("processInstanceId", processInstanceId);
+				//params.put("status", Status.Ready.toString());
+				res=HttpClientUtil.doGet("getProcessTaskList", params);	
+				
+				code=res.getString("code");
+				if(KpiController.CODE_FAILED.equals(code)) {
+					return;
+				}
+				//result=(JSONObject) res.get("result");
+				
+				JSONArray arr=res.getJSONArray("result");
+				if(arr.size()>0 && arr.size()==1) {
+					JSONObject nextTask=arr.getJSONObject(0);
+					String nextTaskId=nextTask.getString("id");
+					if(nextTaskId.equals(taskId)) {
+						System.out.println("processInstance["+processInstanceId+"] is finished");
+						return;
+					}else {
+						taskId=nextTaskId;
+					}
+					//delegate
+					/*
+					params.put("taskId", taskId);
+					params.put("userId", userId);
+					params.put("targetUserId", userId);
+					res=HttpClientUtil.doGet("assignTask", params);	
+					
+					code=res.getString("code");
+					if(KpiController.CODE_FAILED.equals(code)) {
+						return;
+					}
+					*/
+				}else {
+					System.out.println("processInstance["+processInstanceId+"] is finished, no task find");
+					return;
+				}
+				//taskId=task.getString("id");
+			}
+			
+			
+			
 		} catch (ClientProtocolException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
